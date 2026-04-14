@@ -1,2 +1,3 @@
-# Practica-IAA
+# IAA
 
+Práctica 1
