@@ -17,6 +17,8 @@ df = df.drop(["UDI",  "Product ID",  "TWF",  "HDF",  "PWF",  "OSF",  "RNF"], axi
 
 print(df.isnull().sum()) # suma los valores perdidos de cada columna, no hay en este caso
 
+df["Type"] = df["Type"].map({"L": 0, "M": 1, "H": 2})  # convertir Type a valores numéricos
+
 feature_df = df[['Type', 'Air temperature [K]', 'Process temperature [K]','Rotational speed [rpm]', 'Torque [Nm]', 'Tool wear [min]']] # datos de entrada
 
 X_readed = np.asarray(feature_df) # convertir de pandas a array de NumPy
@@ -25,3 +27,7 @@ print(feature_df.shape) # mostrar dimension
 
 y_readed = np.asarray(df['Machine failure']) # datos de salida y convertir a array
 print(y_readed[0:5])
+
+X_train, X_test, y_train, y_test = train_test_split(X_readed, y_readed, random_state = 1)
+print ('Train set:', X_train.shape,  y_train.shape)
+print ('Test set:', X_test.shape,  y_test.shape)
