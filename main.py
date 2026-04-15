@@ -7,6 +7,10 @@ from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
 
+from imblearn.over_sampling import SMOTE
+from imblearn.under_sampling import NearMiss
+
+
 df = pd.read_csv("ai4i2020.csv") # cargar dataset
 
 print(df.head()) # mostrar las primeras 5 filas
@@ -31,3 +35,32 @@ print(y_readed[0:5])
 X_train, X_test, y_train, y_test = train_test_split(X_readed, y_readed, random_state = 1)
 print ('Train set:', X_train.shape,  y_train.shape)
 print ('Test set:', X_test.shape,  y_test.shape)
+
+# comprobar desbalanceo antes del oversampling
+unique, counts = np.unique(y_train, return_counts=True)
+print("Clases antes del balanceo:", dict(zip(unique, counts)))
+
+# aplicar oversampling con SMOTE
+sm = SMOTE(random_state=1)
+X_train, y_train = sm.fit_resample(X_train, y_train)
+
+# comprobar balanceo después de SMOTE
+print('Train set balanceado:', X_train.shape, y_train.shape)
+
+unique, counts = np.unique(y_train, return_counts=True)
+print("Clases después del balanceo:", dict(zip(unique, counts)))
+
+# Normalización de los datos
+scaler = preprocessing.StandardScaler()
+
+# Ajuste del modelo con los datos de entrenamiento
+scaler.fit(X_train)
+
+# Transformación de los datos de entrenamiento
+X_train = scaler.transform(X_train)
+
+# Transformación de los datos de test
+X_test = scaler.transform(X_test)
+
+# Visualización de los primeros datos transformados
+print(X_train[0:5])
