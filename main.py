@@ -64,3 +64,53 @@ X_test = scaler.transform(X_test)
 
 # Visualización de los primeros datos transformados
 print(X_train[0:5])
+
+ # PCA
+mypca = PCA()
+mypca.fit(X_train)
+
+# Varianza por componente
+variance = mypca.explained_variance_ratio_
+print("\nVarianza que aporta cada componente:")
+print(variance)
+
+# Varianza acumulada
+print("\nVarianza acumulada:")
+acumvar = variance.cumsum()
+for i in range(len(acumvar)):
+    print(f"{(i+1)} componentes: {acumvar[i]:.8f}")
+
+# PCA con 2 componentes
+mypca2 = PCA(n_components=2)
+mypca2.fit(X_train)
+values_proj2 = mypca2.transform(X_train)
+
+# Reconstrucción y pérdida con 2 componentes
+X_projected2 = mypca2.inverse_transform(values_proj2)
+loss2 = ((X_train - X_projected2) ** 2).mean()
+print("\nProjection loss (2 components):", loss2)
+
+# Gráfica comparativa
+plt.figure()
+
+plt.subplot(1,2,1)
+plt.title("Datos originales (2 atributos)")
+plt.scatter(X_train[:,0], X_train[:,1], marker='o', c=y_train)
+
+plt.subplot(1,2,2)
+plt.title("PCA (2 componentes)")
+plt.scatter(values_proj2[:,0], values_proj2[:,1], marker='o', c=y_train)
+
+plt.subplots_adjust(right=1.9)
+plt.show()
+
+# PCA con 5 componentes
+mypca5 = PCA(n_components=5)
+mypca5.fit(X_train)
+values_proj5 = mypca5.transform(X_train)
+
+# Reconstrucción y pérdida con 5 componentes
+X_projected5 = mypca5.inverse_transform(values_proj5)
+loss5 = ((X_train - X_projected5) ** 2).mean()
+
+print("\nProjection loss (5 components):", loss5)
