@@ -1,14 +1,11 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
-
 from sklearn.model_selection import train_test_split
-
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
-
 from imblearn.over_sampling import SMOTE
-from imblearn.under_sampling import NearMiss
+from sklearn.tree import DecisionTreeClassifier
 
 
 df = pd.read_csv("ai4i2020.csv") # cargar dataset
@@ -65,7 +62,7 @@ X_test = scaler.transform(X_test)
 # Visualización de los primeros datos transformados
 print(X_train[0:5])
 
- # PCA
+# PCA
 mypca = PCA()
 mypca.fit(X_train)
 
@@ -116,7 +113,7 @@ loss5 = ((X_train - X_projected5) ** 2).mean()
 print("\nProjection loss (5 components):", loss5)
 
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
+from sklearn.metrics import accuracy_score
 import time
 
 # KNN sin PCA
@@ -208,3 +205,152 @@ plt.show()
 # Selección del mejor K
 best_k = resultados_knn.loc[resultados_knn["Accuracy media"].idxmax(), "K"]
 print("Mejor K:", best_k)
+
+# KNN con PCA
+
+k_values = [1, 3, 5, 7, 9]
+
+acc_mean_list_pca = []
+time_mean_list_pca = []
+
+for k in k_values:
+    
+    acc_runs = []
+    time_runs = []
+    
+    for i in range(5):
+        
+        # División entrenamiento / test
+        X_train, X_test, y_train, y_test = train_test_split(
+            X_readed, y_readed, random_state=i+1
+        )
+        
+        # Balanceo con SMOTE
+        sm = SMOTE(random_state=i+1)
+        X_train, y_train = sm.fit_resample(X_train, y_train)
+        
+        # Normalización
+        scaler = preprocessing.StandardScaler()
+        scaler.fit(X_train)
+        X_train = scaler.transform(X_train)
+        X_test = scaler.transform(X_test)
+        
+        # PCA
+        pca = PCA(n_components=5)
+        pca.fit(X_train)
+        X_train = pca.transform(X_train)
+        X_test = pca.transform(X_test)
+        
+        # Tiempo de ejecución
+        start = time.time()
+        
+        # Crear modelo
+        neigh = KNeighborsClassifier(n_neighbors=k)
+        
+        # Entrenar modelo
+        neigh.fit(X_train, y_train)
+        
+        # Predicción
+        yhat = neigh.predict(X_test)
+        
+        end = time.time()
+        
+        # Accuracy
+        acc_runs.append(accuracy_score(y_test, yhat))
+        
+        # Tiempo
+        time_runs.append(end - start)
+    
+    acc_mean = np.mean(acc_runs)
+    time_mean = np.mean(time_runs)
+    
+    acc_mean_list_pca.append(acc_mean)
+    time_mean_list_pca.append(time_mean)
+    
+    print("K =", k)
+    print("Accuracy media PCA:", acc_mean)
+    print("Tiempo medio PCA:", time_mean)
+    print()
+
+
+# Tabla de resultados PCA
+resultados_knn_pca = pd.DataFrame({
+    "K": k_values,
+    "Accuracy media PCA": acc_mean_list_pca,
+    "Tiempo medio PCA": time_mean_list_pca
+})
+
+print(resultados_knn_pca)
+
+# Gráfica de exactitud media frente a K (PCA)
+plt.figure()
+plt.plot(k_values, acc_mean_list_pca, marker='o')
+plt.xlabel("K")
+plt.ylabel("Accuracy media")
+plt.title("KNN con PCA: Accuracy media frente a K")
+plt.show()
+
+# Gráfica de tiempo medio frente a K (PCA)
+plt.figure()
+plt.plot(k_values, time_mean_list_pca, marker='o')
+plt.xlabel("K")
+plt.ylabel("Tiempo medio de ejecución (s)")
+plt.title("KNN con PCA: Tiempo medio frente a K")
+plt.show()
+
+# Selección del mejor K con PCA
+best_k_pca = resultados_knn_pca.loc[resultados_knn_pca["Accuracy media PCA"].idxmax(), "K"]
+print("Mejor K con PCA:", best_k_pca)
+
+# Arbol de decisión
+
+acc_runs_tree = []
+time_runs_tree = []
+
+for i in range(5):
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_readed, y_readed, random_state=i+1
+    )
+    
+    sm = SMOTE(random_state=i+1)
+    X_train, y_train = sm.fit_resample(X_train, y_train)
+    
+    scaler = preprocessing.StandardScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+    
+    start = time.time()
+    
+    tree = DecisionTreeClassifier(random_state=i+1)
+    tree.fit(X_train, y_train)
+    
+    yhat = tree.predict(X_test)
+    
+    end = time.time()
+    
+    acc_runs_tree.append(accuracy_score(y_test, yhat))
+    time_runs_tree.append(end - start)
+
+print("Árbol de decisión")
+print("Accuracy media:", np.mean(acc_runs_tree))
+print("Tiempo medio:", np.mean(time_runs_tree))
+
+# Comparación final
+
+print("\nComparación final")
+
+print("\nKNN sin PCA")
+print("Mejor K:", best_k)
+print("Accuracy:", max(acc_mean_list))
+print("Tiempo:", time_mean_list[k_values.index(best_k)])
+
+print("\nKNN con PCA")
+print("Mejor K:", best_k_pca)
+print("Accuracy:", max(acc_mean_list_pca))
+print("Tiempo:", time_mean_list_pca[k_values.index(best_k_pca)])
+
+print("\nÁrbol de decisión")
+print("Accuracy:", np.mean(acc_runs_tree))
+print("Tiempo:", np.mean(time_runs_tree))
