@@ -1,11 +1,16 @@
 import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
+
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.decomposition import PCA
-from imblearn.over_sampling import SMOTE
+from sklearn.neighbors import KNeighborsClassifier
 from sklearn.tree import DecisionTreeClassifier
+from sklearn.metrics import accuracy_score, confusion_matrix
+
+from imblearn.over_sampling import SMOTE
+import time
 
 
 df = pd.read_csv("ai4i2020.csv") # cargar dataset
@@ -112,9 +117,7 @@ loss5 = ((X_train - X_projected5) ** 2).mean()
 
 print("\nProjection loss (5 components):", loss5)
 
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
-import time
+
 
 # KNN sin PCA
 
@@ -354,3 +357,59 @@ print("Tiempo:", time_mean_list_pca[k_values.index(best_k_pca)])
 print("\nÁrbol de decisión")
 print("Accuracy:", np.mean(acc_runs_tree))
 print("Tiempo:", np.mean(time_runs_tree))
+
+# Matrices de confusión
+
+def preparar_datos_base(random_state=1):
+    
+    X_train, X_test, y_train, y_test = train_test_split(
+        X_readed, y_readed, random_state=random_state
+    )
+    
+    sm = SMOTE(random_state=random_state)
+    X_train, y_train = sm.fit_resample(X_train, y_train)
+    
+    scaler = preprocessing.StandardScaler()
+    scaler.fit(X_train)
+    X_train = scaler.transform(X_train)
+    X_test = scaler.transform(X_test)
+    
+    return X_train, X_test, y_train, y_test
+
+
+# KNN sin PCA
+X_train, X_test, y_train, y_test = preparar_datos_base(random_state=1)
+
+knn_final = KNeighborsClassifier(n_neighbors=best_k)
+knn_final.fit(X_train, y_train)
+yhat_knn = knn_final.predict(X_test)
+
+print("\nMatriz de confusión KNN sin PCA:")
+print(confusion_matrix(y_test, yhat_knn))
+
+
+# KNN con PCA
+X_train, X_test, y_train, y_test = preparar_datos_base(random_state=1)
+
+pca = PCA(n_components=5)
+pca.fit(X_train)
+X_train = pca.transform(X_train)
+X_test = pca.transform(X_test)
+
+knn_pca_final = KNeighborsClassifier(n_neighbors=best_k_pca)
+knn_pca_final.fit(X_train, y_train)
+yhat_knn_pca = knn_pca_final.predict(X_test)
+
+print("\nMatriz de confusión KNN con PCA:")
+print(confusion_matrix(y_test, yhat_knn_pca))
+
+
+# Árbol de decisión
+X_train, X_test, y_train, y_test = preparar_datos_base(random_state=1)
+
+tree_final = DecisionTreeClassifier(random_state=1)
+tree_final.fit(X_train, y_train)
+yhat_tree = tree_final.predict(X_test)
+
+print("\nMatriz de confusión Árbol de decisión:")
+print(confusion_matrix(y_test, yhat_tree))
